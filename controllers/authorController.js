@@ -266,6 +266,8 @@ exports.forgetPasswordController = async (req, res) => {
     console.log("Inside forgetPasswordController");
     
     const { email } = req.body
+    // console.log(email);
+    
     if (!email) {
         res.status(404).json("Please Provide Email")
     }
@@ -273,49 +275,46 @@ exports.forgetPasswordController = async (req, res) => {
     if (checkAuthor) {
         //token generation
         const token = jwt.sign({ authorId: checkAuthor._id }, process.env.JWTPASSWORD)
+        // console.log(token);
 
-        // const transporter = nodemailer.createTransport({
-        //     service: "gmail",
-        //     secure: "true",
-        //     auth: {
-        //         user: process.env.MY_GAMIL,
-        //         pass: process.env.MY_PASSWORD
-        //     }
-        // })
-        // const receiver = {
-        //     from: process.env.MY_GAMIL,
-        //     to: email,
-        //     subject: "Password Reset Request",
-        //     text: `Click on this link to generate your new password ${process.env.CLIENT_URL}/reset-password/${token}`
-        // }
-        // await transporter.sendMail(receiver)
-        // res.status(200).json("Password reset link send succeesfully on your gmail account")
-
-        var transporter = nodemailer.createTransport({
-            service: 'gmail',
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            secure: "true",
             auth: {
-              user:"fasnaanas16@gmail.com",
-              pass: "abchmukpgdmracah"
+                user: process.env.MY_GAMIL,
+                pass: process.env.MY_PASSWORD
             }
-          });
-          
-          var mailOptions = {
-            from: "fasnaanas16@gmail.com",
-
+        })
+        const receiver = {
+            from: process.env.MY_GAMIL,
             to: email,
-            subject: 'Sending Email using Node.js',
-            text: 'That was easy!'
-          };
-          
-          transporter.sendMail(mailOptions, function(error, info){
-            if (error) {
-              console.log(error);
-            } else {
-              console.log('Email sent: ' + info.response);
-            }
-          });
-
+            subject: "Password Reset Request",
+            text: `Click on this link to generate your new password ${process.env.CLIENT_URL}/reset-password/${token}`
+        }
+        await transporter.sendMail(receiver)
+        res.status(200).json("Password reset link send succeesfully on your gmail account")
     } else {
         res.status(404).json("Author not found please register")
     }
+}
+
+//resetPassword
+exports.resetPasswordController = async(req,res)=>{
+    console.log("Inside resetPasswordController");
+    const {token} = req.params
+    const {password} = req.body
+    // console.log(token,password);
+    
+    const jwtResponse = jwt.verify(token,process.env.JWTPASSWORD)
+    const id = jwtResponse.authorId
+    const encryptPassword = await bcrypt.hash(password, 10)
+    try{
+       
+        const updatedAuthor =  await authors.findByIdAndUpdate({_id:id},{ $set: { password: encryptPassword } }, { new: true })
+        await updatedAuthor.save()
+        res.status(200).json(updatedAuthor)
+    }catch(err){
+        res.status(401).json(err)
+    }
+    
 }

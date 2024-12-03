@@ -64,6 +64,9 @@ router.post('/authors/:id/:currentpwd/:newpwd/changePwd',jwtMiddleware,authorCon
 //forgetpassword
 router.post("/forget-password",authorController.forgetPasswordController)
 
+//reset-password
+router.post('/reset-password/:token',authorController.resetPasswordController)
+
 //homeblog
 router.get("/homeblog",blogController.homeBlogsController)
 
